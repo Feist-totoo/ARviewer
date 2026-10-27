@@ -1,0 +1,431 @@
+/**
+ * canvas-ui.css (v6.0 Ultra-Minimalist "Zero-Chrome" AR Camera Edition)
+ * 极简无边框相机设计：
+ * - 剔除一切冗余文字卡片、属性框与双层面板，保留 94% 以上纯粹相机取景画面
+ * - 顶部：微型状态点胶囊 (30px) + 3 枚 34px 纯图标毛玻璃圆钮
+ * - 底部：单行悬浮晶球底座 (56px)，模型化为 42px 灵动圆标，按住即拖入画面钉死
+ * - 选中态：仅浮现 38px 单行微型图标胶囊，点击画面空白处即刻隐去
+ */
+:root {
+  --glass: rgba(12, 16, 26, 0.56);
+  --glass-strong: rgba(10, 14, 24, 0.78);
+  --border: rgba(255, 255, 255, 0.15);
+  --cyan: #00f2fe;
+  --emerald: #38ef7d;
+  --rose: #ff3366;
+  --text: #f8fbff;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #04070e;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'PingFang SC', sans-serif;
+  color: var(--text);
+}
+
+#camera-video-feed {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+  background: radial-gradient(circle at 50% 40%, #102038 0%, #04070e 100%);
+}
+
+#slam-debug-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  pointer-events: none;
+}
+
+#webgl-canvas-container {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+#ar-ui-root {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: max(env(safe-area-inset-top, 10px), 10px) 12px max(env(safe-area-inset-bottom, 12px), 12px);
+  pointer-events: none;
+}
+
+/* ================= 顶部：30px 微型状态点 + 34px 纯图标圆钮 ================= */
+.top-minimal-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: auto;
+}
+
+.status-mini-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: var(--glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+}
+
+.status-mini-pill.pts-hidden .slam-dot {
+  background: var(--cyan);
+  box-shadow: 0 0 6px var(--cyan);
+}
+
+.slam-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--emerald);
+  box-shadow: 0 0 8px var(--emerald);
+}
+
+.top-icon-Cluster {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.circle-icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: var(--text);
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.12s ease;
+}
+
+.circle-icon-btn:active {
+  transform: scale(0.9);
+}
+
+.circle-icon-btn.active {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+/* ================= 中央全屏净空取景交互区 ================= */
+#ar-viewport-overlay {
+  position: relative;
+  flex: 1;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+/* 选中模型时浮现的 38px 单行微型图标条 */
+.micro-context-pill {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  height: 38px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--glass-strong);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 242, 254, 0.4);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  z-index: 15;
+}
+
+.ctx-icon-btn {
+  height: 28px;
+  min-width: 28px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ctx-icon-btn:active {
+  transform: scale(0.92);
+}
+
+.ctx-icon-btn.locked {
+  background: rgba(56, 239, 125, 0.18);
+  color: var(--emerald);
+}
+
+.ctx-icon-btn.danger {
+  background: rgba(255, 51, 102, 0.22);
+  color: #ff8fa3;
+}
+
+.ctx-color-dot {
+  width: 18px;
+  height: 18px;
+  margin: 0 3px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  cursor: pointer;
+}
+
+/* ================= 底部：58px 单行悬浮晶球底座 ================= */
+.bottom-floating-bar {
+  pointer-events: auto;
+  align-self: center;
+  width: min(94vw, 390px);
+  height: 58px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--glass-strong);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.bottom-floating-bar.minimized {
+  width: auto;
+  padding: 0 6px;
+}
+
+.bottom-floating-bar.minimized .orb-carousel,
+.bottom-floating-bar.minimized .import-orb-btn {
+  display: none;
+}
+
+/* 模型晶球横向滑动轨 */
+.orb-carousel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 2px 0;
+}
+
+.orb-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.model-orb {
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  touch-action: none;
+  position: relative;
+  transition: transform 0.14s ease, border-color 0.14s ease;
+}
+
+.model-orb:active {
+  transform: scale(0.9);
+  border-color: var(--emerald);
+}
+
+.orb-glyph {
+  font-size: 17px;
+  color: var(--cyan);
+  line-height: 1;
+}
+
+.orb-short-label {
+  font-size: 7.5px;
+  color: rgba(255, 255, 255, 0.72);
+  margin-top: 1px;
+  max-width: 36px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* 导入本地模型 + 按钮 */
+.import-orb-btn {
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1.5px dashed rgba(0, 242, 254, 0.6);
+  background: rgba(0, 242, 254, 0.1);
+  color: var(--cyan);
+  font-size: 18px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* 快门拍照圆钮 */
+.shutter-orb-btn {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid var(--cyan);
+  background: rgba(0, 242, 254, 0.12);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.shutter-orb-inner {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--cyan), var(--emerald));
+}
+
+/* 拖拽时的极简发光准星环 */
+.drag-ghost {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 56px;
+  height: 56px;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.ghost-ring {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid var(--emerald);
+  box-shadow: 0 0 18px rgba(56, 239, 125, 0.75), inset 0 0 10px rgba(56, 239, 125, 0.4);
+}
+
+/* 轻量顶部提示胶囊 */
+.toast-banner {
+  position: fixed;
+  top: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--glass-strong);
+  border: 1px solid rgba(0, 242, 254, 0.45);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 500;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* 抓拍预览弹窗 */
+.snapshot-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: rgba(4, 7, 14, 0.85);
+  backdrop-filter: blur(14px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  pointer-events: auto;
+}
+
+.snapshot-modal-card {
+  width: min(90vw, 360px);
+  background: var(--glass-strong);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.snapshot-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.snapshot-preview-img {
+  width: 100%;
+  max-height: 58vh;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.snapshot-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.save-pill-btn {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(135deg, var(--cyan), var(--emerald));
+  color: #041019;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.hidden {
+  display: none !important;
+}

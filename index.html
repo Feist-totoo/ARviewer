@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#04070e" />
+  <title>HoloCanvas AR — 平面识别与空间锚定相机</title>
+  <link rel="stylesheet" href="/src/styles/canvas-ui.css" />
+</head>
+<body>
+  <!-- 底层：手机实时后置摄像头画面 -->
+  <video id="camera-video-feed" autoplay playsinline muted></video>
+
+  <!-- 实时视觉 OpenCV 特征角点与共面三角网跟踪画布 (点击左上角胶囊可显隐) -->
+  <canvas id="slam-debug-canvas"></canvas>
+
+  <!-- 中层：Three.js 全息三维平面与模型空间渲染层 -->
+  <div id="webgl-canvas-container"></div>
+
+  <!-- 顶层：极简零遮挡相机 UI (94% 净空取景面积) -->
+  <div id="ar-ui-root">
+    <!-- 顶部：左侧平面与锁定状态胶囊 + 右侧纯图标圆钮 -->
+    <header class="top-minimal-bar">
+      <button type="button" id="btn-toggle-slam-pts" class="status-mini-pill" title="点击显隐 OpenCV 特征点与共面网格">
+        <span class="slam-dot"></span>
+        <span id="hud-slam-points">3 平面 · 稳态锁定</span>
+      </button>
+
+      <div class="top-icon-Cluster">
+        <button type="button" id="btn-scan-plane" class="circle-icon-btn active" title="在当前视野中心识别并生成新平面">📐</button>
+        <button type="button" id="btn-toggle-planes" class="circle-icon-btn active" title="显隐已识别的三维平面网格">⬡</button>
+        <button type="button" id="btn-cycle-shader" class="circle-icon-btn" title="切换全息/真实/线框材质">✨</button>
+        <button type="button" id="btn-toggle-dock" class="circle-icon-btn" title="折叠/展开底部栏">👁</button>
+        <button type="button" id="btn-clear-all" class="circle-icon-btn" title="清空全部模型">🗑</button>
+      </div>
+    </header>
+
+    <!-- 中央全屏 AR 净空取景器 (支持拖拽模型吸附平面、双指缩放、点击空白处隐藏菜单) -->
+    <main id="ar-viewport-overlay">
+      <!-- 选中模型时才出现的 38px 单行微型浮条 -->
+      <section id="canvas-inspector-pill" class="micro-context-pill hidden">
+        <button type="button" id="btn-lock-toggle" data-gizmo-action="toggle-lock" class="ctx-icon-btn locked" title="锁定/解锁位置 (解锁后可拖移到其他平面)">🔒</button>
+        <button type="button" data-gizmo-action="cycle-plane" class="ctx-icon-btn" title="切换摆放至下一个已识别平面">⬡</button>
+        <button type="button" data-gizmo-action="scale-down" class="ctx-icon-btn" title="缩小">−</button>
+        <button type="button" data-gizmo-action="scale-up" class="ctx-icon-btn" title="放大">＋</button>
+        <button type="button" data-gizmo-action="rot-left" class="ctx-icon-btn" title="旋转朝向">↻</button>
+        <button type="button" id="btn-cycle-color" class="ctx-color-dot" style="background:#00f2fe" title="切换全息颜色" aria-label="切换全息颜色"></button>
+        <button type="button" data-gizmo-action="delete" class="ctx-icon-btn danger" title="移除模型">✕</button>
+      </section>
+    </main>
+
+    <!-- 底部：58px 单行悬浮晶球底座 (按住任意圆标直接拖入画面识别出的平面上摆放) -->
+    <footer id="bottom-canvas-dock" class="bottom-floating-bar">
+      <input
+        id="local-model-input"
+        type="file"
+        accept=".glb,.gltf,.obj,.stl,.fbx"
+        multiple
+        hidden
+      />
+      <button type="button" id="btn-import-model" class="import-orb-btn" title="导入手机本地 3D 建模 (.glb/.obj/.stl/.fbx)">＋</button>
+
+      <!-- 横向滑动圆标轨道 -->
+      <div id="asset-cards-track" class="orb-carousel"></div>
+
+      <!-- 拍照快门 -->
+      <button type="button" id="btn-shutter" class="shutter-orb-btn" title="抓拍全息照片">
+        <span class="shutter-orb-inner"></span>
+      </button>
+    </footer>
+
+    <!-- 拖拽时指尖下的极简发光圆环 -->
+    <div id="drag-ghost" class="drag-ghost hidden">
+      <div class="ghost-ring"></div>
+    </div>
+
+    <!-- 顶部轻量提示胶囊 -->
+    <div id="ar-toast-banner" class="toast-banner hidden">已摆放到平面</div>
+
+    <!-- 抓拍预览弹窗 -->
+    <div id="snapshot-modal" class="snapshot-modal-backdrop hidden">
+      <div class="snapshot-modal-card">
+        <div class="snapshot-modal-header">
+          <span>全息抓拍预览</span>
+          <button type="button" id="btn-close-snapshot" class="ctx-icon-btn">✕</button>
+        </div>
+        <img id="snapshot-preview-img" class="snapshot-preview-img" alt="AR Snapshot" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" />
+        <div class="snapshot-modal-actions">
+          <button type="button" id="btn-download-snapshot" class="save-pill-btn">保存照片</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

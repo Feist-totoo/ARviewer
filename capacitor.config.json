@@ -1,0 +1,14 @@
+{
+  "appId": "com.holocanvas.arcamera",
+  "appName": "HoloCanvas AR",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "Camera": {
+      "presentationStyle": "fullscreen"
+    }
+  }
+}
